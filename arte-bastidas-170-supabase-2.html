@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARTE BASTIDAS 170</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --cream:#F2ECDD; --card:#FBF8F0; --ink:#221E19; --ink-soft:#5C574C;
+    --border:#DCD5C2; --amber:#B08948; --amber-bg:#FAEEDA; --amber-ink:#7A5A22;
+    --dark:#221E19;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; font-family:-apple-system,Segoe UI,Roboto,sans-serif; background:var(--cream); color:var(--ink);}
+  .icon{display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; vertical-align:-4px;}
+  .icon svg{width:100%; height:100%;}
+
+  header{background:var(--dark); color:#F1EFE8; padding:16px 18px;}
+  header h1{font-family:Georgia,serif; font-size:20px; margin:0; font-weight:500;}
+  header p.tag{font-size:10px; color:#B4B2A9; margin:3px 0 0; letter-spacing:0.08em;}
+  header p.brand{font-size:11px; color:#B08948; margin:6px 0 0;}
+  .badge-sync{font-size:11px; margin-top:8px; display:inline-flex; align-items:center; gap:4px; background:rgba(255,255,255,0.1); border:0.5px solid rgba(255,255,255,0.25); padding:3px 9px; border-radius:20px;}
+
+  #splash{position:relative; min-height:78vh; background:radial-gradient(circle at 30% 20%, #4a4436, #221E19 70%); display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding:26px 20px; text-align:center; color:#F1EFE8;}
+  #splash .tag{position:absolute; top:14px; right:14px; background:rgba(255,255,255,0.12); font-size:10px; padding:3px 8px; border-radius:20px;}
+  #splash .num{font-family:Georgia,serif; font-size:52px; font-weight:500; letter-spacing:0.02em; margin:0; color:#B08948;}
+  #splash h2{font-family:Georgia,serif; font-size:22px; margin:2px 0 6px; font-weight:500;}
+  #splash p.sub{font-size:12px; color:#B4B2A9; margin:0 0 4px;}
+  #splash p.desc{font-size:13px; color:#D3D1C7; margin:0 0 22px; max-width:260px;}
+  #splash button{font-size:13px; padding:10px 18px; border-radius:8px; border:0.5px solid rgba(255,255,255,0.25); background:rgba(255,255,255,0.1); color:#F1EFE8;}
+  #splash .enter{margin-top:12px; background:none; border:none; color:#888780; text-decoration:underline; font-size:12px;}
+
+  main{max-width:520px; margin:0 auto; padding:16px;}
+  .section-label{font-size:12px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin:0 0 8px; display:flex; align-items:center; gap:6px;}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .art-card{background:var(--card); border:0.5px solid var(--border); border-radius:12px; overflow:hidden; text-align:left; cursor:pointer;}
+  .art-thumb{height:90px; position:relative; background-size:cover; background-position:center;}
+  .tag-cert{position:absolute; top:6px; right:6px; background:var(--amber-bg); color:var(--amber-ink); font-size:10px; padding:2px 6px; border-radius:6px; display:flex; align-items:center; gap:3px;}
+  .art-body{padding:8px 10px;}
+  .art-body p.t{font-size:13px; font-weight:600; margin:0;}
+  .art-body p.p{font-size:12px; color:var(--ink-soft); margin:2px 0 0;}
+  .empty-msg{grid-column:1/-1; text-align:center; padding:30px 10px; color:var(--ink-soft); font-size:13px;}
+
+  #detail{display:none; background:var(--card); border:0.5px solid var(--border); border-radius:12px; padding:16px 18px; margin-top:14px;}
+  #detail h3{font-family:Georgia,serif; margin:0 0 4px; font-size:18px;}
+  #detail .desc{font-size:13px; color:var(--ink-soft); margin:0 0 12px;}
+  #detail .media-img{width:100%; border-radius:8px; margin-bottom:12px; display:block;}
+  #detail video{width:100%; border-radius:8px; margin-bottom:12px; display:block;}
+  .lvl-row{display:flex; gap:8px; margin-bottom:12px;}
+  .lvl-item{flex:1; text-align:center; padding:8px 4px; border-radius:8px; background:var(--cream); border:0.5px solid var(--border); font-size:10px; color:var(--ink-soft); display:flex; flex-direction:column; align-items:center; gap:3px;}
+  .lvl-item.sel{border:2px solid var(--amber); background:var(--amber-bg); color:var(--amber-ink);}
+  .audio-row{display:flex; align-items:center; gap:10px; background:var(--cream); border-radius:8px; padding:8px 10px; margin-bottom:12px;}
+  .audio-row audio{flex:1;}
+  .rows div{display:flex; justify-content:space-between; font-size:13px; border-bottom:0.5px solid var(--border); padding:6px 0; align-items:center;}
+  .rows div span:first-child{display:flex; align-items:center; gap:6px; color:var(--ink-soft);}
+  .footer-row{display:flex; justify-content:space-between; align-items:center; padding-top:12px; border-top:0.5px solid var(--border); margin-top:10px;}
+  .price{font-size:20px; font-weight:600;}
+  .note{font-size:11px; color:var(--ink-soft); background:var(--cream); border-radius:8px; padding:8px 10px; margin-top:10px; display:flex; gap:6px; align-items:flex-start;}
+  .note .icon{flex-shrink:0; margin-top:1px;}
+
+  nav{display:flex; justify-content:space-around; padding:10px 0; border-top:0.5px solid var(--border); background:var(--card); font-size:12px; color:var(--ink-soft); margin-top:24px; position:sticky; bottom:0;}
+  nav span{display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer;}
+  nav span.on{color:var(--ink); font-weight:600;}
+
+  #admin{display:none; padding:16px;}
+  .pin-box{max-width:280px; margin:60px auto; text-align:center;}
+  .pin-box input{width:100%; padding:10px; text-align:center; font-size:16px; border:0.5px solid var(--border); border-radius:8px; margin-bottom:10px;}
+  #pin-error{color:#A32D2D; font-size:12px; display:none;}
+  #admin-panel{display:none;}
+  #admin-panel h3{font-family:Georgia,serif; margin:20px 0 4px; font-size:16px; display:flex; align-items:center; gap:6px;}
+  #admin-panel .help{font-size:12px; color:var(--ink-soft); margin:0 0 10px;}
+  #admin-panel label{font-size:12px; color:var(--ink-soft); display:block; margin:10px 0 4px;}
+  #admin-panel input[type=text], #admin-panel input[type=number], #admin-panel select{width:100%; padding:8px; border:0.5px solid var(--border); border-radius:6px; font-size:13px; background:#fff;}
+  #admin-panel input[type=file]{width:100%; font-size:12px; margin-top:4px;}
+  .slider-row{display:flex; align-items:center; gap:10px;}
+  .slider-row input[type=range]{flex:1;}
+  .slider-row span{font-size:15px; font-weight:600; min-width:44px; text-align:right;}
+  .admin-card{background:var(--card); border:0.5px solid var(--border); border-radius:12px; padding:14px; margin-top:12px;}
+  .obra-edit{border-bottom:0.5px solid var(--border); padding:10px 0;}
+  .obra-edit:last-child{border-bottom:none;}
+  .obra-edit .head{display:flex; justify-content:space-between; align-items:center; font-weight:600; font-size:13px;}
+  .obra-edit .body{display:none; padding-top:8px;}
+  .obra-edit.open .body{display:block;}
+  .btn{background:var(--dark); color:#F1EFE8; border:none; padding:8px 14px; border-radius:8px; font-size:12px; margin-top:6px;}
+  .btn-danger{background:#A32D2D;}
+  .upload-status{font-size:11px; color:var(--amber-ink); margin-top:4px; display:none;}
+
+  footer{text-align:center; padding:20px; font-size:11px; color:var(--ink-soft);}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <span class="tag" id="splash-badge">Cargando…</span>
+  <p class="num">170</p>
+  <h2>ARTE BASTIDAS</h2>
+  <p class="sub">Técnicas Artísticas Bastidas</p>
+  <p class="desc" id="splash-desc">Arte · Arquitectura · Tecnología — más de 170 técnicas artísticas propias, cada obra con su historia.</p>
+  <button onclick="enter()">Entrar a la colección</button>
+</div>
+
+<div id="app" style="display:none;">
+<header>
+  <h1>ARTE BASTIDAS 170</h1>
+  <p class="tag">GALERÍA DE OBRAS</p>
+  <p class="brand">Técnicas Artísticas Bastidas — Arte, Arquitectura y Tecnología</p>
+  <span class="badge-sync"><span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19H9a6 6 0 1 1 1.3-11.9A5 5 0 0 1 20 9.5a4 4 0 0 1-1.5 8.5"/><path d="m9 15 2 2 4-4"/></svg></span>Sincronizado con Supabase</span>
+</header>
+
+<main id="client-view">
+  <p class="section-label">
+    <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg></span>
+    Obras
+  </p>
+  <div class="grid" id="grid"><div class="empty-msg">Cargando obras…</div></div>
+  <div id="detail"></div>
+</main>
+
+<div id="admin">
+  <div class="pin-box" id="pin-box">
+    <p style="font-size:13px; color:var(--ink-soft);">Ingresa el PIN de administración</p>
+    <input type="text" id="pin-input" maxlength="4" placeholder="••••" inputmode="numeric">
+    <button onclick="checkPin()" style="width:100%; padding:10px; background:var(--dark); color:#F1EFE8; border:none; border-radius:8px; font-size:13px;">Entrar</button>
+    <p id="pin-error">PIN incorrecto</p>
+  </div>
+
+  <div id="admin-panel">
+    <h3><span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 9h.01M15 15h.01M15 9 9 15"/></svg></span>Ajuste general de precios</h3>
+    <p class="help">Sube o baja todos los precios a la vez.</p>
+    <div class="slider-row">
+      <input type="range" id="pct-slider" min="-10" max="30" value="0" step="1" oninput="onPctInput()" onchange="savePct()">
+      <span id="pct-out">+0%</span>
+    </div>
+
+    <h3><span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg></span>Obras — datos y archivos</h3>
+    <p class="help">Toca una obra para editar su precio, nivel de autenticidad, y subir su foto, video o audio.</p>
+    <div id="admin-art-list"></div>
+    <button class="btn" onclick="addObra()">+ Agregar obra nueva</button>
+
+    <h3><span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M4 9h16"/></svg></span>Pantalla de bienvenida</h3>
+    <label>Frase de bienvenida</label>
+    <input type="text" id="splash-text-input" onchange="saveConfigField('splash_text', this.value); document.getElementById('splash-desc').textContent=this.value;">
+    <label>Etiqueta (ej. temporada)</label>
+    <input type="text" id="splash-badge-input" onchange="saveConfigField('splash_badge', this.value); document.getElementById('splash-badge').textContent=this.value;">
+  </div>
+</div>
+
+<nav>
+  <span onclick="showClient()" id="nav-client" class="on"><span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/></svg></span>Tienda</span>
+  <span onclick="showAdmin()" id="nav-admin"><span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg></span>Administración</span>
+</nav>
+</div>
+
+<footer style="display:none;">Jairo Yoban Bastidas · Técnicas Artísticas Bastidas</footer>
+
+<script>
+const SUPABASE_URL = "https://jsoxaheheqsfzikh.supabase.co";
+const SUPABASE_KEY = "sb_publishable_3p5shwV0ml252QIxN8icQw_j6FlowgU";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const PIN = "1234";
+const BUCKET = "arte-bastidas-media";
+
+const levelLabel = {firma:"Firma", cert:"Firma + certificado", video:"Firma + certificado + video"};
+const iconCert = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="12" cy="8" r="5"/><path d="M9 12.5 7 21l5-3 5 3-2-8.5"/></svg>';
+const iconVideo = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m16 10 6-3v10l-6-3"/></svg>';
+const iconSignature = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M3 17c2-4 3-8 5-8s1 6 3 6 2-9 4-9 1 8 3 8 2-3 3-3"/></svg>';
+const iconTech = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>';
+const iconClock = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>';
+const iconInfo = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>';
+
+let obras = [];
+let config = {splash_text:"", splash_badge:"", price_pct:0};
+let currentId = null;
+
+function fmt(n){ return '$' + Math.round(n).toLocaleString('es-CO'); }
+function priceOf(o){ return (o.base_price || 0) * (1 + (config.price_pct||0)/100); }
+
+async function loadAll(){
+  let cfg;
+  try{
+    const res = await withRetry(() => sb.from('arte_bastidas_config').select('*').eq('id',1).single());
+    cfg = res.data;
+  }catch(e){ alert('No se pudo cargar la configuración:\n' + e.message); }
+  if(cfg){
+    config = cfg;
+    document.getElementById('splash-desc').textContent = cfg.splash_text;
+    document.getElementById('splash-badge').textContent = cfg.splash_badge;
+    document.getElementById('splash-text-input').value = cfg.splash_text;
+    document.getElementById('splash-badge-input').value = cfg.splash_badge;
+    document.getElementById('pct-slider').value = cfg.price_pct || 0;
+    document.getElementById('pct-out').textContent = (cfg.price_pct>=0?'+':'') + (cfg.price_pct||0) + '%';
+  }
+  let rows;
+  try{
+    const res = await withRetry(() => sb.from('arte_bastidas_obras').select('*').order('created_at'));
+    if(res.error){ alert('No se pudieron cargar las obras:\n' + res.error.message); }
+    rows = res.data;
+  }catch(e){ alert('No se pudieron cargar las obras después de varios intentos:\n' + e.message); }
+  obras = rows || [];
+  renderGrid();
+  renderAdminList();
+}
+
+function enter(){
+  document.getElementById('splash').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+}
+
+function renderGrid(){
+  const grid = document.getElementById('grid');
+  if(obras.length === 0){ grid.innerHTML = '<div class="empty-msg">Aún no hay obras cargadas. Entra a Administración para agregar la primera.</div>'; return; }
+  grid.innerHTML = '';
+  obras.forEach(o => {
+    const div = document.createElement('div');
+    div.className = 'art-card';
+    div.onclick = () => selectArt(o.id);
+    const bg = o.image_url ? `background-image:url('${o.image_url}')` : `background:#DCD5C2`;
+    div.innerHTML = `
+      <div class="art-thumb" style="${bg}">
+        ${o.level==='cert' ? `<span class="tag-cert">${iconCert} Cert.</span>` : ''}
+        ${o.level==='video' ? `<span class="tag-cert">${iconVideo} Video</span>` : ''}
+      </div>
+      <div class="art-body">
+        <p class="t">${o.title}</p>
+        <p class="p">${fmt(priceOf(o))}</p>
+      </div>`;
+    grid.appendChild(div);
+  });
+}
+
+function selectArt(id){
+  currentId = id;
+  const o = obras.find(x => x.id === id);
+  const d = document.getElementById('detail');
+  d.style.display = 'block';
+  d.innerHTML = `
+    <h3>${o.title}</h3>
+    <p class="desc">${o.description || ''}</p>
+    ${o.image_url ? `<img class="media-img" src="${o.image_url}">` : ''}
+    ${o.video_url ? `<video controls src="${o.video_url}"></video>` : ''}
+    ${o.audio_url ? `<div class="audio-row"><audio controls src="${o.audio_url}"></audio></div>` : `<p class="note"><span class="icon">${iconInfo}</span>Esta obra aún no tiene audio grabado.</p>`}
+    <div class="lvl-row">
+      <div class="lvl-item ${o.level==='firma'?'sel':''}">${iconSignature}Firma</div>
+      <div class="lvl-item ${o.level==='cert'?'sel':''}">${iconCert.replace('width="12" height="12"','width="14" height="14"')}+ Certificado</div>
+      <div class="lvl-item ${o.level==='video'?'sel':''}">${iconVideo.replace('width="12" height="12"','width="14" height="14"')}+ Video</div>
+    </div>
+    <div class="rows">
+      <div><span>${iconTech}Técnica</span><span>${o.tech || '—'}</span></div>
+      <div><span>${iconClock}Tiempo</span><span>${o.time_info || '—'}</span></div>
+      <div><span>Autenticidad</span><span>${levelLabel[o.level] || '—'}</span></div>
+    </div>
+    <div class="footer-row">
+      <span class="price">${fmt(priceOf(o))}</span>
+    </div>`;
+  d.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function onPctInput(){
+  const v = parseInt(document.getElementById('pct-slider').value);
+  document.getElementById('pct-out').textContent = (v>=0?'+':'') + v + '%';
+}
+async function savePct(){
+  const v = parseInt(document.getElementById('pct-slider').value);
+  config.price_pct = v;
+  await sb.from('arte_bastidas_config').update({price_pct:v}).eq('id',1);
+  renderGrid();
+  if(currentId !== null){ selectArt(currentId); }
+}
+async function saveConfigField(field, value){
+  await sb.from('arte_bastidas_config').update({[field]:value}).eq('id',1);
+}
+
+function renderAdminList(){
+  const list = document.getElementById('admin-art-list');
+  list.innerHTML = '';
+  obras.forEach(o => {
+    const div = document.createElement('div');
+    div.className = 'obra-edit admin-card';
+    div.innerHTML = `
+      <div class="head" onclick="this.parentElement.classList.toggle('open')">
+        <span>${o.title || '(sin nombre)'}</span>
+        <span class="icon">${iconEditToggle()}</span>
+      </div>
+      <div class="body">
+        <label>Título</label>
+        <input type="text" value="${o.title||''}" onchange="updateObra('${o.id}','title',this.value)">
+        <label>Descripción</label>
+        <input type="text" value="${o.description||''}" onchange="updateObra('${o.id}','description',this.value)">
+        <label>Técnica</label>
+        <input type="text" value="${o.tech||''}" onchange="updateObra('${o.id}','tech',this.value)">
+        <label>Tiempo de proceso</label>
+        <input type="text" value="${o.time_info||''}" onchange="updateObra('${o.id}','time_info',this.value)">
+        <label>Nivel de autenticidad</label>
+        <select onchange="updateObra('${o.id}','level',this.value)">
+          <option value="firma" ${o.level==='firma'?'selected':''}>Firma</option>
+          <option value="cert" ${o.level==='cert'?'selected':''}>Firma + certificado</option>
+          <option value="video" ${o.level==='video'?'selected':''}>Firma + certificado + video</option>
+        </select>
+        <label>Precio base</label>
+        <input type="number" value="${o.base_price||0}" onchange="updateObra('${o.id}','base_price',parseFloat(this.value)||0)">
+        <label>Foto</label>
+        <input type="file" accept="image/*" onchange="uploadMedia('${o.id}','image_url',this.files[0],this)">
+        <label>Video</label>
+        <input type="file" accept="video/*" onchange="uploadMedia('${o.id}','video_url',this.files[0],this)">
+        <label>Audio</label>
+        <input type="file" accept="audio/*" onchange="uploadMedia('${o.id}','audio_url',this.files[0],this)">
+        <p class="upload-status"></p>
+        <button class="btn btn-danger" onclick="deleteObra('${o.id}')">Eliminar obra</button>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+function iconEditToggle(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>'; }
+
+async function updateObra(id, field, value){
+  await sb.from('arte_bastidas_obras').update({[field]:value}).eq('id', id);
+  const o = obras.find(x => x.id === id);
+  if(o){ o[field] = value; }
+  renderGrid();
+  if(currentId === id){ selectArt(id); }
+}
+
+async function uploadMedia(id, field, file, inputEl){
+  if(!file) return;
+  const statusEl = inputEl.closest('.body').querySelector('.upload-status');
+  statusEl.style.display = 'block';
+  statusEl.textContent = 'Subiendo...';
+  const path = `${id}/${field}-${Date.now()}-${file.name}`;
+  const { error } = await sb.storage.from(BUCKET).upload(path, file, { upsert:true });
+  if(error){
+    statusEl.textContent = 'Error al subir: ' + error.message;
+    return;
+  }
+  const { data } = sb.storage.from(BUCKET).getPublicUrl(path);
+  await updateObra(id, field, data.publicUrl);
+  statusEl.textContent = 'Listo, se guardó correctamente.';
+  setTimeout(() => { statusEl.style.display = 'none'; }, 2500);
+}
+
+async function withRetry(fn, attempts=3){
+  let lastErr;
+  for(let i=0; i<attempts; i++){
+    try{
+      return await fn();
+    }catch(e){
+      lastErr = e;
+      await new Promise(r => setTimeout(r, 800 * (i+1)));
+    }
+  }
+  throw lastErr;
+}
+
+async function addObra(){
+  try{
+    const res = await withRetry(() => fetch(`${SUPABASE_URL}/rest/v1/arte_bastidas_obras`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({title:'Nueva obra', level:'firma', base_price:0})
+    }));
+    if(!res.ok){
+      const text = await res.text();
+      alert('No se pudo crear la obra (código ' + res.status + '):\n' + text);
+      return;
+    }
+    await loadAll();
+  }catch(e){
+    alert('No se pudo conectar después de varios intentos:\n' + e.message + '\n\nRevisa tu conexión e intenta de nuevo en unos segundos.');
+  }
+}
+async function deleteObra(id){
+  if(!confirm('¿Eliminar esta obra?')) return;
+  await sb.from('arte_bastidas_obras').delete().eq('id', id);
+  obras = obras.filter(o => o.id !== id);
+  renderGrid(); renderAdminList();
+  if(currentId === id){ document.getElementById('detail').style.display = 'none'; currentId = null; }
+}
+
+function showClient(){
+  document.getElementById('client-view').style.display = 'block';
+  document.getElementById('admin').style.display = 'none';
+  document.getElementById('nav-client').classList.add('on');
+  document.getElementById('nav-admin').classList.remove('on');
+}
+function showAdmin(){
+  document.getElementById('client-view').style.display = 'none';
+  document.getElementById('admin').style.display = 'block';
+  document.getElementById('nav-client').classList.remove('on');
+  document.getElementById('nav-admin').classList.add('on');
+}
+function checkPin(){
+  const val = document.getElementById('pin-input').value;
+  if(val === PIN){
+    document.getElementById('pin-box').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+  } else {
+    document.getElementById('pin-error').style.display = 'block';
+  }
+}
+
+loadAll();
+</script>
+</body>
+</html>
