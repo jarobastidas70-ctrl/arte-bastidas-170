@@ -331,6 +331,312 @@ async function uploadMedia(id, field, file, inputEl){
 }
 
 async function addObra(){
+  const { error } = await sb.from('arte_bastidas_obras').insert({title:'Nueva obra', level:'firma', base_price:0});
+  if(error){
+    alert('No se pudo crear la obra:\n' + error.message + (error.details ? ('\n' + error.details) : '') + (error.hint ? ('\nSugerencia: ' + error.hint) : ''));
+    return;
+  }
+  await loadAll();
+}
+async function deleteObra(id){
+  if(!confirm('¿Eliminar esta obra?')) return;
+  await sb.from('arte_bastidas_obras').delete().eq('id', id);
+  obras = obras.filter(o => o.id !== id);
+  renderGrid(); renderAdminList();
+  if(currentId === id){ document.getElementById('detail').style.display = 'none'; currentId = null; }
+}
+
+function showClient(){
+  document.getElementById('client-view').style.display = 'block';
+  document.getElementById('admin').style.display = 'none';
+  document.getElementById('nav-client').classList.add('on');
+  document.getElementById('nav-admin').classList.remove('on');
+}
+function showAdmin(){
+  document.getElementById('client-view').style.display = 'none';
+  document.getElementById('admin').style.display = 'block';
+  document.getElementById('nav-client').classList.remove('on');
+  document.getElementById('nav-admin').classList.add('on');
+}
+function checkPin(){
+  const val = document.getElementById('pin-input').value;
+  if(val === PIN){
+    document.getElementById('pin-box').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+  } else {
+    document.getElementById('pin-error').style.display = 'block';
+  }
+}
+
+loadAll();
+</script>
+</body>
+</html>
+  #pin-error{color:#A32D2D; font-size:12px; display:none;}
+  #admin-panel{display:none;}
+  #admin-panel h3{font-family:Georgia,serif; margin:20px 0 4px; font-size:16px; display:flex; align-items:center; gap:6px;}
+  #admin-panel .help{font-size:12px; color:var(--ink-soft); margin:0 0 10px;}
+  #admin-panel label{font-size:12px; color:var(--ink-soft); display:block; margin:10px 0 4px;}
+  #admin-panel input[type=text], #admin-panel input[type=number], #admin-panel select{width:100%; padding:8px; border:0.5px solid var(--border); border-radius:6px; font-size:13px; background:#fff;}
+  #admin-panel input[type=file]{width:100%; font-size:12px; margin-top:4px;}
+  .slider-row{display:flex; align-items:center; gap:10px;}
+  .slider-row input[type=range]{flex:1;}
+  .slider-row span{font-size:15px; font-weight:600; min-width:44px; text-align:right;}
+  .admin-card{background:var(--card); border:0.5px solid var(--border); border-radius:12px; padding:14px; margin-top:12px;}
+  .obra-edit{border-bottom:0.5px solid var(--border); padding:10px 0;}
+  .obra-edit:last-child{border-bottom:none;}
+  .obra-edit .head{display:flex; justify-content:space-between; align-items:center; font-weight:600; font-size:13px;}
+  .obra-edit .body{display:none; padding-top:8px;}
+  .obra-edit.open .body{display:block;}
+  .btn{background:var(--dark); color:#F1EFE8; border:none; padding:8px 14px; border-radius:8px; font-size:12px; margin-top:6px;}
+  .btn-danger{background:#A32D2D;}
+  .upload-status{font-size:11px; color:var(--amber-ink); margin-top:4px; display:none;}
+
+  footer{text-align:center; padding:20px; font-size:11px; color:var(--ink-soft);}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <span class="tag" id="splash-badge">Cargando…</span>
+  <p class="num">170</p>
+  <h2>ARTE BASTIDAS</h2>
+  <p class="sub">Técnicas Artísticas Bastidas</p>
+  <p class="desc" id="splash-desc">Arte · Arquitectura · Tecnología — más de 170 técnicas artísticas propias, cada obra con su historia.</p>
+  <button onclick="enter()">Entrar a la colección</button>
+</div>
+
+<div id="app" style="display:none;">
+<header>
+  <h1>ARTE BASTIDAS 170</h1>
+  <p class="tag">GALERÍA DE OBRAS</p>
+  <p class="brand">Técnicas Artísticas Bastidas — Arte, Arquitectura y Tecnología</p>
+  <span class="badge-sync"><span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19H9a6 6 0 1 1 1.3-11.9A5 5 0 0 1 20 9.5a4 4 0 0 1-1.5 8.5"/><path d="m9 15 2 2 4-4"/></svg></span>Sincronizado con Supabase</span>
+</header>
+
+<main id="client-view">
+  <p class="section-label">
+    <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg></span>
+    Obras
+  </p>
+  <div class="grid" id="grid"><div class="empty-msg">Cargando obras…</div></div>
+  <div id="detail"></div>
+</main>
+
+<div id="admin">
+  <div class="pin-box" id="pin-box">
+    <p style="font-size:13px; color:var(--ink-soft);">Ingresa el PIN de administración</p>
+    <input type="text" id="pin-input" maxlength="4" placeholder="••••" inputmode="numeric">
+    <button onclick="checkPin()" style="width:100%; padding:10px; background:var(--dark); color:#F1EFE8; border:none; border-radius:8px; font-size:13px;">Entrar</button>
+    <p id="pin-error">PIN incorrecto</p>
+  </div>
+
+  <div id="admin-panel">
+    <h3><span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 9h.01M15 15h.01M15 9 9 15"/></svg></span>Ajuste general de precios</h3>
+    <p class="help">Sube o baja todos los precios a la vez.</p>
+    <div class="slider-row">
+      <input type="range" id="pct-slider" min="-10" max="30" value="0" step="1" oninput="onPctInput()" onchange="savePct()">
+      <span id="pct-out">+0%</span>
+    </div>
+
+    <h3><span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg></span>Obras — datos y archivos</h3>
+    <p class="help">Toca una obra para editar su precio, nivel de autenticidad, y subir su foto, video o audio.</p>
+    <div id="admin-art-list"></div>
+    <button class="btn" onclick="addObra()">+ Agregar obra nueva</button>
+
+    <h3><span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M4 9h16"/></svg></span>Pantalla de bienvenida</h3>
+    <label>Frase de bienvenida</label>
+    <input type="text" id="splash-text-input" onchange="saveConfigField('splash_text', this.value); document.getElementById('splash-desc').textContent=this.value;">
+    <label>Etiqueta (ej. temporada)</label>
+    <input type="text" id="splash-badge-input" onchange="saveConfigField('splash_badge', this.value); document.getElementById('splash-badge').textContent=this.value;">
+  </div>
+</div>
+
+<nav>
+  <span onclick="showClient()" id="nav-client" class="on"><span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/></svg></span>Tienda</span>
+  <span onclick="showAdmin()" id="nav-admin"><span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg></span>Administración</span>
+</nav>
+</div>
+
+<footer style="display:none;">Jairo Yoban Bastidas · Técnicas Artísticas Bastidas</footer>
+
+<script>
+const SUPABASE_URL = "https://jsoxaheheqsfzikh.supabase.co";
+const SUPABASE_KEY = "sb_publishable_3p5shwV0ml252QIxN8icQw_j6FlowgU";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const PIN = "1234";
+const BUCKET = "arte-bastidas-media";
+
+const levelLabel = {firma:"Firma", cert:"Firma + certificado", video:"Firma + certificado + video"};
+const iconCert = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="12" cy="8" r="5"/><path d="M9 12.5 7 21l5-3 5 3-2-8.5"/></svg>';
+const iconVideo = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m16 10 6-3v10l-6-3"/></svg>';
+const iconSignature = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M3 17c2-4 3-8 5-8s1 6 3 6 2-9 4-9 1 8 3 8 2-3 3-3"/></svg>';
+const iconTech = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>';
+const iconClock = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>';
+const iconInfo = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>';
+
+let obras = [];
+let config = {splash_text:"", splash_badge:"", price_pct:0};
+let currentId = null;
+
+function fmt(n){ return '$' + Math.round(n).toLocaleString('es-CO'); }
+function priceOf(o){ return (o.base_price || 0) * (1 + (config.price_pct||0)/100); }
+
+async function loadAll(){
+  const { data: cfg } = await sb.from('arte_bastidas_config').select('*').eq('id',1).single();
+  if(cfg){
+    config = cfg;
+    document.getElementById('splash-desc').textContent = cfg.splash_text;
+    document.getElementById('splash-badge').textContent = cfg.splash_badge;
+    document.getElementById('splash-text-input').value = cfg.splash_text;
+    document.getElementById('splash-badge-input').value = cfg.splash_badge;
+    document.getElementById('pct-slider').value = cfg.price_pct || 0;
+    document.getElementById('pct-out').textContent = (cfg.price_pct>=0?'+':'') + (cfg.price_pct||0) + '%';
+  }
+  const { data: rows, error } = await sb.from('arte_bastidas_obras').select('*').order('created_at');
+  if(error){ alert('No se pudieron cargar las obras:\n' + error.message); }
+  obras = rows || [];
+  renderGrid();
+  renderAdminList();
+}
+
+function enter(){
+  document.getElementById('splash').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+}
+
+function renderGrid(){
+  const grid = document.getElementById('grid');
+  if(obras.length === 0){ grid.innerHTML = '<div class="empty-msg">Aún no hay obras cargadas. Entra a Administración para agregar la primera.</div>'; return; }
+  grid.innerHTML = '';
+  obras.forEach(o => {
+    const div = document.createElement('div');
+    div.className = 'art-card';
+    div.onclick = () => selectArt(o.id);
+    const bg = o.image_url ? `background-image:url('${o.image_url}')` : `background:#DCD5C2`;
+    div.innerHTML = `
+      <div class="art-thumb" style="${bg}">
+        ${o.level==='cert' ? `<span class="tag-cert">${iconCert} Cert.</span>` : ''}
+        ${o.level==='video' ? `<span class="tag-cert">${iconVideo} Video</span>` : ''}
+      </div>
+      <div class="art-body">
+        <p class="t">${o.title}</p>
+        <p class="p">${fmt(priceOf(o))}</p>
+      </div>`;
+    grid.appendChild(div);
+  });
+}
+
+function selectArt(id){
+  currentId = id;
+  const o = obras.find(x => x.id === id);
+  const d = document.getElementById('detail');
+  d.style.display = 'block';
+  d.innerHTML = `
+    <h3>${o.title}</h3>
+    <p class="desc">${o.description || ''}</p>
+    ${o.image_url ? `<img class="media-img" src="${o.image_url}">` : ''}
+    ${o.video_url ? `<video controls src="${o.video_url}"></video>` : ''}
+    ${o.audio_url ? `<div class="audio-row"><audio controls src="${o.audio_url}"></audio></div>` : `<p class="note"><span class="icon">${iconInfo}</span>Esta obra aún no tiene audio grabado.</p>`}
+    <div class="lvl-row">
+      <div class="lvl-item ${o.level==='firma'?'sel':''}">${iconSignature}Firma</div>
+      <div class="lvl-item ${o.level==='cert'?'sel':''}">${iconCert.replace('width="12" height="12"','width="14" height="14"')}+ Certificado</div>
+      <div class="lvl-item ${o.level==='video'?'sel':''}">${iconVideo.replace('width="12" height="12"','width="14" height="14"')}+ Video</div>
+    </div>
+    <div class="rows">
+      <div><span>${iconTech}Técnica</span><span>${o.tech || '—'}</span></div>
+      <div><span>${iconClock}Tiempo</span><span>${o.time_info || '—'}</span></div>
+      <div><span>Autenticidad</span><span>${levelLabel[o.level] || '—'}</span></div>
+    </div>
+    <div class="footer-row">
+      <span class="price">${fmt(priceOf(o))}</span>
+    </div>`;
+  d.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function onPctInput(){
+  const v = parseInt(document.getElementById('pct-slider').value);
+  document.getElementById('pct-out').textContent = (v>=0?'+':'') + v + '%';
+}
+async function savePct(){
+  const v = parseInt(document.getElementById('pct-slider').value);
+  config.price_pct = v;
+  await sb.from('arte_bastidas_config').update({price_pct:v}).eq('id',1);
+  renderGrid();
+  if(currentId !== null){ selectArt(currentId); }
+}
+async function saveConfigField(field, value){
+  await sb.from('arte_bastidas_config').update({[field]:value}).eq('id',1);
+}
+
+function renderAdminList(){
+  const list = document.getElementById('admin-art-list');
+  list.innerHTML = '';
+  obras.forEach(o => {
+    const div = document.createElement('div');
+    div.className = 'obra-edit admin-card';
+    div.innerHTML = `
+      <div class="head" onclick="this.parentElement.classList.toggle('open')">
+        <span>${o.title || '(sin nombre)'}</span>
+        <span class="icon">${iconEditToggle()}</span>
+      </div>
+      <div class="body">
+        <label>Título</label>
+        <input type="text" value="${o.title||''}" onchange="updateObra('${o.id}','title',this.value)">
+        <label>Descripción</label>
+        <input type="text" value="${o.description||''}" onchange="updateObra('${o.id}','description',this.value)">
+        <label>Técnica</label>
+        <input type="text" value="${o.tech||''}" onchange="updateObra('${o.id}','tech',this.value)">
+        <label>Tiempo de proceso</label>
+        <input type="text" value="${o.time_info||''}" onchange="updateObra('${o.id}','time_info',this.value)">
+        <label>Nivel de autenticidad</label>
+        <select onchange="updateObra('${o.id}','level',this.value)">
+          <option value="firma" ${o.level==='firma'?'selected':''}>Firma</option>
+          <option value="cert" ${o.level==='cert'?'selected':''}>Firma + certificado</option>
+          <option value="video" ${o.level==='video'?'selected':''}>Firma + certificado + video</option>
+        </select>
+        <label>Precio base</label>
+        <input type="number" value="${o.base_price||0}" onchange="updateObra('${o.id}','base_price',parseFloat(this.value)||0)">
+        <label>Foto</label>
+        <input type="file" accept="image/*" onchange="uploadMedia('${o.id}','image_url',this.files[0],this)">
+        <label>Video</label>
+        <input type="file" accept="video/*" onchange="uploadMedia('${o.id}','video_url',this.files[0],this)">
+        <label>Audio</label>
+        <input type="file" accept="audio/*" onchange="uploadMedia('${o.id}','audio_url',this.files[0],this)">
+        <p class="upload-status"></p>
+        <button class="btn btn-danger" onclick="deleteObra('${o.id}')">Eliminar obra</button>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+function iconEditToggle(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>'; }
+
+async function updateObra(id, field, value){
+  await sb.from('arte_bastidas_obras').update({[field]:value}).eq('id', id);
+  const o = obras.find(x => x.id === id);
+  if(o){ o[field] = value; }
+  renderGrid();
+  if(currentId === id){ selectArt(id); }
+}
+
+async function uploadMedia(id, field, file, inputEl){
+  if(!file) return;
+  const statusEl = inputEl.closest('.body').querySelector('.upload-status');
+  statusEl.style.display = 'block';
+  statusEl.textContent = 'Subiendo...';
+  const path = `${id}/${field}-${Date.now()}-${file.name}`;
+  const { error } = await sb.storage.from(BUCKET).upload(path, file, { upsert:true });
+  if(error){
+    statusEl.textContent = 'Error al subir: ' + error.message;
+    return;
+  }
+  const { data } = sb.storage.from(BUCKET).getPublicUrl(path);
+  await updateObra(id, field, data.publicUrl);
+  statusEl.textContent = 'Listo, se guardó correctamente.';
+  setTimeout(() => { statusEl.style.display = 'none'; }, 2500);
+}
+
+async function addObra(){
   const { data, error } = await sb.from('arte_bastidas_obras').insert({title:'Nueva obra', level:'firma', base_price:0}).select().single();
   if(error){
     alert('No se pudo crear la obra:\n' + error.message + (error.details ? ('\n' + error.details) : '') + (error.hint ? ('\nSugerencia: ' + error.hint) : ''));
